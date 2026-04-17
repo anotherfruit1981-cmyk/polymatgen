@@ -73,6 +73,16 @@ print(f"Predicted Tg: {tg:.1f} K")
 ├── database/     # PI1M and polyVERSE reference loaders
 └── ml/           # Morgan fingerprinting and RF predictors
 
+# Random Forest (fast, good baseline)
+from polymatgen.ml.predictors import TgPredictor
+rf = TgPredictor()
+print(rf.predict("[*]CC([*])c1ccccc1"))
+
+# Graph Neural Network (learns from structure directly)
+from polymatgen.ml.gcn_predictor import GCNTgPredictor
+gcn = GCNTgPredictor(epochs=50)
+print(gcn.predict("[*]CC([*])c1ccccc1"))
+
 📊 Data Sources
 
 POLYMATGEN DATA SOURCES SUMMARY

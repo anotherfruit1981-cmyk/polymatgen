@@ -12,11 +12,22 @@ from polymatgen.properties.mechanical import ContourLength
 
 from polymatgen.ml.features import psmiles_to_fingerprint, batch_fingerprints
 from polymatgen.ml.predictors import TgPredictor, BandgapPredictor, CohesiveEnergyPredictor
+from polymatgen.ml.gcn_predictor import (
+    GCNTgPredictor, GCNBandgapPredictor, GCNCohesiveEnergyPredictor,
+    smiles_to_graph,
+)
 
 __version__ = "0.1.0"
+
 __all__ = [
+    # Core
     "Monomer", "Chain", "Polymer",
+    # Properties
     "FoxEquation", "HildebrandSolubility", "FloryHuggins", "ContourLength",
+    # ML — fingerprint-based
     "psmiles_to_fingerprint", "batch_fingerprints",
     "TgPredictor", "BandgapPredictor", "CohesiveEnergyPredictor",
+    # ML — graph-based
+    "GCNTgPredictor", "GCNBandgapPredictor", "GCNCohesiveEnergyPredictor",
+    "smiles_to_graph",
 ]
