@@ -16,6 +16,11 @@ from polymatgen.ml.gcn_predictor import (
     GCNTgPredictor, GCNBandgapPredictor, GCNCohesiveEnergyPredictor,
     smiles_to_graph,
 )
+from polymatgen.ml.equivariant_predictor import (
+    EquivariantTgPredictor, EquivariantBandgapPredictor,
+    EquivariantCohesiveEnergyPredictor,
+    smiles_to_equivariant_graph, smiles_to_3d,
+)
 from polymatgen.ml.inverse_design import InverseDesigner
 
 __version__ = "0.1.0"
@@ -31,6 +36,10 @@ __all__ = [
     # ML — graph-based
     "GCNTgPredictor", "GCNBandgapPredictor", "GCNCohesiveEnergyPredictor",
     "smiles_to_graph",
+    # ML — equivariant 3D
+    "EquivariantTgPredictor", "EquivariantBandgapPredictor",
+    "EquivariantCohesiveEnergyPredictor",
+    "smiles_to_equivariant_graph", "smiles_to_3d",
     # ML — inverse design
     "InverseDesigner",
 ]
