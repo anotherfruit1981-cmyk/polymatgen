@@ -16,6 +16,7 @@ from polymatgen.ml.gcn_predictor import (
     GCNTgPredictor, GCNBandgapPredictor, GCNCohesiveEnergyPredictor,
     smiles_to_graph,
 )
+from polymatgen.ml.inverse_design import InverseDesigner
 
 __version__ = "0.1.0"
 
@@ -30,4 +31,6 @@ __all__ = [
     # ML — graph-based
     "GCNTgPredictor", "GCNBandgapPredictor", "GCNCohesiveEnergyPredictor",
     "smiles_to_graph",
+    # ML — inverse design
+    "InverseDesigner",
 ]

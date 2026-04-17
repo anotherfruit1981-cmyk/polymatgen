@@ -83,6 +83,19 @@ from polymatgen.ml.gcn_predictor import GCNTgPredictor
 gcn = GCNTgPredictor(epochs=50)
 print(gcn.predict("[*]CC([*])c1ccccc1"))
 
+from polymatgen.ml.predictors import TgPredictor, BandgapPredictor
+from polymatgen.ml.inverse_design import InverseDesigner
+
+designer = InverseDesigner()
+designer.add_constraint(TgPredictor(), min_val=500.0, name="Tg > 500 K")
+designer.add_constraint(BandgapPredictor(), max_val=2.0, name="Bandgap < 2 eV")
+
+results = designer.run(n_generations=20, population_size=50)
+
+for smi, scores, fitness in results[:5]:
+    print(smi, scores)
+
+
 📊 Data Sources
 
 POLYMATGEN DATA SOURCES SUMMARY
