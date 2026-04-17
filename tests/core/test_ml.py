@@ -165,3 +165,61 @@ def test_save_and_load_model(tmp_path):
     bg1 = p.predict(POLYSTYRENE)
     bg2 = p2.predict(POLYSTYRENE)
     assert abs(bg1 - bg2) < 1e-6
+
+# --- Uncertainty Quantification ---
+@pytest.mark.skipif(not os.path.exists(TG_PATH),
+                    reason="Tg dataset not found")
+def test_tg_predict_with_uncertainty_returns_tuple():
+    p = TgPredictor(n_estimators=10)
+    mean, std = p.predict_with_uncertainty(POLYSTYRENE)
+    assert isinstance(mean, float)
+    assert isinstance(std, float)
+    assert std >= 0.0
+
+@pytest.mark.skipif(not os.path.exists(TG_PATH),
+                    reason="Tg dataset not found")
+def test_tg_uncertainty_mean_close_to_predict():
+    p = TgPredictor(n_estimators=50)
+    mean, std = p.predict_with_uncertainty(POLYSTYRENE)
+    point = p.predict(POLYSTYRENE)
+    # mean from trees should match point prediction closely
+    assert abs(mean - point) < 1.0
+
+@pytest.mark.skipif(not os.path.exists(TG_PATH),
+                    reason="Tg dataset not found")
+def test_tg_batch_with_uncertainty():
+    p = TgPredictor(n_estimators=10)
+    results = p.predict_batch_with_uncertainty(TEST_SMILES)
+    assert len(results) == 3
+    for smi, mean, std in results:
+        assert mean > 0
+        assert std >= 0
+
+@pytest.mark.skipif(not os.path.exists(TG_PATH),
+                    reason="Tg dataset not found")
+def test_uncertainty_threshold_splits_correctly():
+    p = TgPredictor(n_estimators=10)
+    out = p.uncertainty_threshold(TEST_SMILES)
+    total = len(out["confident"]) + len(out["uncertain"])
+    assert total == 3
+    assert out["threshold"] is not None
+    for r in out["confident"]:
+        assert r[2] <= out["threshold"]
+    for r in out["uncertain"]:
+        assert r[2] > out["threshold"]
+
+@pytest.mark.skipif(not os.path.exists(BANDGAP_PATH),
+                    reason="Bandgap dataset not found")
+def test_bandgap_predict_with_uncertainty():
+    p = BandgapPredictor(n_estimators=10)
+    mean, std = p.predict_with_uncertainty(POLYSTYRENE)
+    assert mean >= 0.0
+    assert std >= 0.0
+
+@pytest.mark.skipif(not os.path.exists(CED_PATH),
+                    reason="CED dataset not found")
+def test_ced_predict_with_uncertainty():
+    p = CohesiveEnergyPredictor(n_estimators=10)
+    mean, std = p.predict_with_uncertainty(POLYSTYRENE)
+    assert mean > 0.0
+    assert std >= 0.0

@@ -5,12 +5,12 @@ Each predictor:
 - Loads its training data from the polyVERSE/PolyMetriX datasets
 - Computes Morgan fingerprints from SMILES
 - Trains a Random Forest regressor
-- Exposes predict() and evaluate() methods
+- Exposes predict(), predict_with_uncertainty(), and evaluate() methods
 
 Predictors included:
-    TgPredictor          — glass transition temperature (K)
-    BandgapPredictor     — electronic bandgap (eV)
-    CohesiveEnergyPredictor — cohesive energy density (MPa)
+    TgPredictor              — glass transition temperature (K)
+    BandgapPredictor         — electronic bandgap (eV)
+    CohesiveEnergyPredictor  — cohesive energy density (MPa)
 """
 
 import os
@@ -29,7 +29,8 @@ CED_PATH = os.path.join(DATA_DIR, "Cohesive_energy_density_2025_06_23.csv")
 class _BasePredictor:
     """
     Base class for all polymatgen ML predictors.
-    Handles training, prediction, evaluation and model persistence.
+    Handles training, prediction, uncertainty quantification,
+    evaluation and model persistence.
     """
 
     def __init__(self, n_estimators: int = 100, random_state: int = 42,
@@ -81,6 +82,40 @@ class _BasePredictor:
                                      n_bits=self.n_bits)
         return float(self.model.predict([fp])[0])
 
+    def predict_with_uncertainty(self, smiles: str) -> tuple:
+        """
+        Predict property value with uncertainty estimate.
+
+        Uses the variance across individual trees in the Random Forest
+        to estimate prediction uncertainty.
+
+        Parameters
+        ----------
+        smiles : str — p-SMILES string
+
+        Returns
+        -------
+        tuple of (mean, std) where:
+            mean : float — predicted property value
+            std  : float — standard deviation across trees
+
+        Notes
+        -----
+        A large std relative to mean indicates the model is uncertain
+        about this prediction. High-uncertainty candidates are good
+        targets for experimental synthesis to reduce model uncertainty.
+        """
+        if not self.is_trained:
+            self.train()
+        from polymatgen.ml.features import psmiles_to_fingerprint
+        fp = psmiles_to_fingerprint(smiles, radius=self.radius,
+                                     n_bits=self.n_bits)
+        tree_preds = np.array([
+            tree.predict([fp])[0]
+            for tree in self.model.estimators_
+        ])
+        return float(tree_preds.mean()), float(tree_preds.std())
+
     def predict_batch(self, smiles_list: list) -> list:
         """
         Predict property values for a list of SMILES strings.
@@ -97,6 +132,75 @@ class _BasePredictor:
         preds = self.model.predict(X)
         return [(smiles_list[i], float(p))
                 for i, p in zip(valid_idx, preds)]
+
+    def predict_batch_with_uncertainty(self, smiles_list: list) -> list:
+        """
+        Predict property values with uncertainty for a list of SMILES.
+
+        Returns
+        -------
+        list of (smiles, mean, std) tuples for valid SMILES
+        """
+        if not self.is_trained:
+            self.train()
+        from polymatgen.ml.features import batch_fingerprints
+        X, valid_idx = batch_fingerprints(
+            smiles_list, radius=self.radius,
+            n_bits=self.n_bits, skip_errors=True
+        )
+        if len(X) == 0:
+            return []
+
+        results = []
+        for i, fp in zip(valid_idx, X):
+            tree_preds = np.array([
+                tree.predict([fp])[0]
+                for tree in self.model.estimators_
+            ])
+            results.append((
+                smiles_list[i],
+                float(tree_preds.mean()),
+                float(tree_preds.std()),
+            ))
+        return results
+
+    def uncertainty_threshold(self, smiles_list: list,
+                               max_std: float = None) -> dict:
+        """
+        Filter a list of SMILES by prediction uncertainty.
+
+        Candidates below the threshold are confident predictions.
+        Candidates above are flagged as high-priority for experimental
+        synthesis to reduce model uncertainty.
+
+        Parameters
+        ----------
+        smiles_list : list of str
+        max_std     : float — uncertainty cutoff (default: median std)
+
+        Returns
+        -------
+        dict with keys:
+            'confident' : list of (smiles, mean, std) below threshold
+            'uncertain' : list of (smiles, mean, std) above threshold
+            'threshold' : float — the std cutoff used
+        """
+        results = self.predict_batch_with_uncertainty(smiles_list)
+        if not results:
+            return {"confident": [], "uncertain": [], "threshold": None}
+
+        stds = np.array([r[2] for r in results])
+        if max_std is None:
+            max_std = float(np.median(stds))
+
+        confident = [r for r in results if r[2] <= max_std]
+        uncertain = [r for r in results if r[2] > max_std]
+
+        return {
+            "confident": confident,
+            "uncertain": uncertain,
+            "threshold": max_std,
+        }
 
     def evaluate(self, test_fraction: float = 0.2) -> dict:
         """
@@ -168,23 +272,21 @@ class TgPredictor(_BasePredictor):
 
     Trained on the PolyMetriX curated experimental Tg dataset
     (7,367 polymers, literature-mined experimental values).
-
     Reliability filter: excludes 'red' reliability entries.
 
     Example
     -------
     predictor = TgPredictor()
-    tg = predictor.predict("[*]CC([*])c1ccccc1")  # polystyrene
-    print(f"Predicted Tg: {tg:.1f} K")
+    tg = predictor.predict("[*]CC([*])c1ccccc1")
+    mean, std = predictor.predict_with_uncertainty("[*]CC([*])c1ccccc1")
+    print(f"Tg: {mean:.1f} +/- {std:.1f} K")
     """
 
     def train(self):
         import pandas as pd
         if not os.path.exists(TG_PATH):
             raise FileNotFoundError(
-                f"Tg dataset not found at {TG_PATH}\n"
-                f"Expected: LAMALAB_CURATED_Tg_structured_..."
-                f"polymerclass_with_embeddings.csv"
+                f"Tg dataset not found at {TG_PATH}"
             )
         df = pd.read_csv(TG_PATH)
         df = df[df["meta.reliability"] != "red"]
@@ -213,8 +315,8 @@ class BandgapPredictor(_BasePredictor):
     Example
     -------
     predictor = BandgapPredictor()
-    bg = predictor.predict("[*]CC([*])c1ccccc1")
-    print(f"Predicted bandgap: {bg:.3f} eV")
+    mean, std = predictor.predict_with_uncertainty("[*]CC([*])c1ccccc1")
+    print(f"Bandgap: {mean:.3f} +/- {std:.3f} eV")
     """
 
     def train(self):
@@ -250,9 +352,8 @@ class CohesiveEnergyPredictor(_BasePredictor):
     Example
     -------
     predictor = CohesiveEnergyPredictor()
-    ced = predictor.predict("[*]CC([*])c1ccccc1")
-    delta = ced ** 0.5
-    print(f"Predicted delta: {delta:.2f} (MPa)^0.5")
+    mean, std = predictor.predict_with_uncertainty("[*]CC([*])c1ccccc1")
+    print(f"CED: {mean:.2f} +/- {std:.2f} MPa")
     """
 
     def train(self):
