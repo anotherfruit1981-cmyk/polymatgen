@@ -37,6 +37,14 @@ All models evaluated on held-out 20% test sets. Tg dataset: 7,363 polymers (Poly
 | GCN (1000 epochs) | 0.950 | 0.250 | 0.326 |
 | E(3)-Equivariant (1000 epochs, 4k samples) | **0.968** | **0.200** | **0.260** |
 
+### Cohesive Energy Density (CED)
+
+| Model | R² | MAE (MPa) | RMSE (MPa) |
+|---|---|---|---|
+| RF — Morgan FP (200 trees) | 0.694 | 18.5 | 32.2 |
+| GCN (1000 epochs) | **0.892** | **13.1** | **19.2** |
+| E(3)-Equivariant (1000 epochs, 250 samples) | 0.894 | 13.3 | 18.9 |
+
 **Key findings:**
 - RF saturates at 200 trees — the fingerprint representation is the performance ceiling, not forest size
 - GCN surpasses RF at ~300 epochs and continues improving to 1000 epochs

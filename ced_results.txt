@@ -1,0 +1,33 @@
+=======================================================
+CED Benchmark — RF vs GCN vs Equivariant
+Dataset: 294 total, 59 test
+=======================================================
+
+--- RF (200 trees) ---
+  R2=0.6936  MAE=18.50 MPa  RMSE=32.22 MPa  time=2s
+
+--- GCN epochs sweep ---
+
+  GCN epochs=200
+  R2=0.8232  MAE=17.20 MPa  RMSE=24.47 MPa  time=13s
+
+  GCN epochs=500
+  R2=0.8599  MAE=15.37 MPa  RMSE=21.79 MPa  time=29s
+
+  GCN epochs=1000
+  R2=0.8916  MAE=13.11 MPa  RMSE=19.16 MPa  time=57s
+
+--- Equivariant epochs sweep (250 samples = ~85% of dataset) ---
+
+  Equivariant epochs=200, samples=250
+  R2=0.7028  MAE=23.38 MPa  RMSE=31.73 MPa  time=273s
+
+  Equivariant epochs=500, samples=250
+  R2=0.7604  MAE=22.81 MPa  RMSE=28.49 MPa  time=616s
+
+  Equivariant epochs=1000, samples=250
+  R2=0.8941  MAE=13.34 MPa  RMSE=18.94 MPa  time=1155s
+
+=======================================================
+Done. Results saved to ced_results.txt
+=======================================================
