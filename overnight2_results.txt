@@ -1,0 +1,18 @@
+Loading Tg dataset...
+Dataset: 7363 total, 1473 test
+
+=======================================================
+GCN extended epochs (continuing from 1000)
+=======================================================
+
+  GCN epochs=2000
+  R2=0.9583  MAE=16.44 K  RMSE=22.80 K  time=3093s
+
+  GCN epochs=3000
+  R2=0.9657  MAE=14.78 K  RMSE=20.69 K  time=4542s
+
+=======================================================
+Equivariant extended epochs (7000 samples)
+=======================================================
+
+  Equivariant epochs=2000, samples=7000

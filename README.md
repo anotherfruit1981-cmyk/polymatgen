@@ -26,7 +26,9 @@ All models evaluated on held-out 20% test sets. Tg dataset: 7,363 polymers (Poly
 |---|---|---|---|
 | RF — Morgan FP (200 trees) | 0.864 | 28.3 | 41.3 |
 | GCN (300 epochs) | 0.901 | 26.3 | 35.2 |
-| GCN (1000 epochs) | **0.943** | **19.7** | **26.7** |
+| GCN (1000 epochs) | 0.943 | 19.7 | 26.7 |
+| GCN (2000 epochs) | 0.958 | 16.4 | 22.8 |
+| GCN (3000 epochs) | **0.966** | **14.8** | **20.7** |
 | E(3)-Equivariant (1000 epochs, 7k samples) | 0.937 | 20.9 | 28.0 |
 
 ### Electronic Bandgap
@@ -47,9 +49,10 @@ All models evaluated on held-out 20% test sets. Tg dataset: 7,363 polymers (Poly
 
 **Key findings:**
 - RF saturates at 200 trees — the fingerprint representation is the performance ceiling, not forest size
-- GCN surpasses RF at ~300 epochs and continues improving to 1000 epochs
-- E(3)-equivariant models outperform GCN on bandgap, consistent with bandgap being sensitive to 3D orbital geometry
-- Both deep models are data-hungry — equivariant R² scales from 0.48 (500 samples) to 0.94 (7k samples, 1000 epochs)
+- GCN surpasses RF at ~300 epochs and continues improving — R² rises from 0.844 (100 epochs) to 0.966 (3000 epochs)
+- E(3)-equivariant models outperform GCN on bandgap (R²=0.968), consistent with bandgap being sensitive to 3D orbital geometry
+- GCN and equivariant models are essentially tied on CED (R²=0.892 vs 0.894) despite CED having only 294 training samples
+- Deep models are data-hungry but reward patience — the GCN at 3000 epochs achieves 14.8 K MAE, within 1-2x of experimental measurement noise
 
 ## Installation
 
